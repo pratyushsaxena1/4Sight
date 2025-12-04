@@ -1,0 +1,110 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300..900&display=swap');
+
+body {
+    background-color: black;
+    color: #f5f5f5;
+    font-family: "Inter", sans-serif;
+    margin: 0;
+    padding: 0;
+    text-align: center;
+}
+
+h1 {
+    font-size: 3em;
+    font-weight: 700;
+    margin-bottom: 0.5em;
+}
+
+pre {
+    white-space: pre-line;
+    text-align: left;
+}
+
+.mainContainer {
+    text-align: center;
+    padding: 2em;
+}
+
+#companySearchText {
+    width: 40%;
+    font-size: 1em;
+    padding: 0.7em;
+    border: 1px solid #ffffff;
+    background-color: #1e1e1e;
+    color: #f5f5f5;
+    border-radius: 8px;
+    outline: none;
+}
+
+#searchCompanyButton {
+    width: 15%;
+    font-size: 1em;
+    padding: 0.7em;
+    border: none;
+    background-color: #2a2a2a;
+    color: white;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background 0.3s;
+}
+
+#searchCompanyButton:hover {
+    background-color: #3a3a3a;
+}
+
+#searchCompanyButton:active {
+    background-color: #505050;
+    box-shadow: inset 0px 0px 10px #888;
+}
+
+button {
+    font-family: "Inter", sans-serif;
+    width: 25%;
+    font-size: 1em;
+    padding: 1em;
+    border: none;
+    background-color: #2a2a2a;
+    color: white;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background 0.3s;
+    margin: 1em;
+}
+
+button:hover {
+    background-color: #3a3a3a;
+}
+
+button:active {
+    background-color: #505050;
+    box-shadow: inset 0px 0px 10px #888;
+}
+
+::placeholder {
+    color: #b0b0b0;
+}
+
+#companyTable {
+    width: 70%;
+    text-align: center;
+    border: 1px solid white; 
+    border-collapse: collapse;
+    margin: 2em auto;
+    background: black;
+    border-radius: 12px;
+}
+
+#companyTable th, #companyTable td {
+    padding: 1em;
+    border: 1px solid white;
+    border-bottom: 1px solid white;
+}
+
+#companyTable th {
+    background-color: #2a2a2a;
+    font-size: 1.2em;
+}
+
+#companyTable tr:nth-child(even) {
+    background-color: #181818;
+}

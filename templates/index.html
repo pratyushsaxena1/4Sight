@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>StockBot</title>
+    <link rel="stylesheet" href="../static/css/indexStyle.css">
+</head>
+<body>
+    <div class="mainContainer">
+        <h1>StockBot</h1>
+        <form method="POST" action="/">
+            <input type="text" name="companySearchText" id="companySearchText" placeholder="Search here for company name...">
+            <button type="submit" id="searchCompanyButton">Submit</button>
+        </form>
+        <button type="submit" id="graphsButton" onclick="window.location.href='/visualization'">Stock Visualization</button>
+        <button type="submit" id="analysisButton" onclick="window.location.href='/analysis'">AI Stock Analysis</button>
+        <p>*If the price is N/A, the stock was likely purchased through an alternative means, such as by trading another stock</p>
+        <table id="companyTable">
+            <tr>
+                <th>Company Name</th>
+                <th>Form 4 Filing Date</th>
+                <th>Acquired (A) or Disposed (D)</th>
+                <th>Amount of Shares</th>
+                <th>Price Per Share</th>
+            </tr>
+            {% for row in data %}
+                {% if row[4] and row[0] and row[1] and row[2] and row[3] %}
+                <tr>
+                    <td>{{ row[0] }}</td>
+                    <td>{{ row[1] }}</td>
+                    <td>{{ row[2] }}</td>
+                    <td>{{ row[3] }}</td>
+                    <td>{{ row[4] }}</td>
+                </tr>
+                {% endif %}
+            {% endfor %}
+        </table>
+    </div>
+</body>
+</html>
