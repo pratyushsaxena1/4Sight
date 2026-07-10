@@ -1,0 +1,7 @@
+Flask
+requests
+pandas
+matplotlib
+beautifulsoup4
+lxml
+google-genai

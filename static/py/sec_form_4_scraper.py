@@ -135,37 +135,37 @@ def parse_xml_form_4(url, cik):
         print(f"Error: {e}")
         return pd.DataFrame()
 
+def scrape_form_4(cik):
+    """Scrape Form 4 filings for a CIK and return a DataFrame (empty if none found).
+
+    Runs entirely in-process so it works on serverless platforms where spawning
+    a `python3` subprocess and writing to the project directory are not possible.
+    """
+    df = get_form_4_filings(cik)
+    if df is None:
+        return pd.DataFrame()
+
+    all_matched_links = []
+    for link in df['Link']:
+        all_matched_links.extend(find_wk_form4_links(link, cik))
+    if not all_matched_links:
+        return pd.DataFrame()
+
+    type_1_links, type_2_links = categorize_links(all_matched_links)
+    frames = [parse_html_form_4(link, cik) for link in type_1_links]
+    frames += [parse_xml_form_4(link, cik) for link in type_2_links]
+    frames = [f for f in frames if not f.empty]
+    return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
+
+
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Format to run program: python sec_form_4_scraper.py <CIK>")
         sys.exit(1)
     cik = sys.argv[1]
-    df = get_form_4_filings(cik)
-    if df is not None:
-        all_matched_links = []
-        for link in df['Link']:
-            matched_links = find_wk_form4_links(link, cik)
-            # print("matched_links = ", matched_links)
-            all_matched_links.extend(matched_links)
-        if all_matched_links:
-            type_1_links, type_2_links = categorize_links(all_matched_links)
-            type_1_dataframes = []
-            for link in type_1_links:
-                #print("type 1 link = ", link)
-                type_1_transactions = parse_html_form_4(link, cik)
-                # print("transaction 1 = ", type_1_transactions)
-                type_1_dataframes.append(type_1_transactions)
-            type_2_dataframes = []
-            for link in type_2_links:
-                #print("type 2 link = ", link)
-                type_2_transactions = parse_xml_form_4(link, cik)
-                type_2_dataframes.append(type_2_transactions)
-            type_1_df = pd.concat(type_1_dataframes, ignore_index=True) if type_1_dataframes else pd.DataFrame()
-            type_2_df = pd.concat(type_2_dataframes, ignore_index=True) if type_2_dataframes else pd.DataFrame()
-            final_df = pd.concat([type_1_df, type_2_df], ignore_index=True)
-            final_df.to_csv('form_4_filings.csv', index=False)
-            print("Data has been saved to form_4_filings.csv")
-        else:
-            print("No matching links found")
+    final_df = scrape_form_4(cik)
+    if not final_df.empty:
+        final_df.to_csv('form_4_filings.csv', index=False)
+        print("Data has been saved to form_4_filings.csv")
     else:
         print("No data retrieved")

@@ -17,7 +17,11 @@
 </head>
 <body>
     <h3>{{ selected_company }} Stock Price Visualization</h3>
-    <img src="../static/img/finalgraph.png" alt="Stock Chart" />
+    {% if plot_img %}
+    <img src="data:image/png;base64,{{ plot_img }}" alt="Stock Chart" />
+    {% else %}
+    <p>No visualization available.</p>
+    {% endif %}
     <button onclick="window.location.href='/'">Back to Home</button>
 </body>
 </html>

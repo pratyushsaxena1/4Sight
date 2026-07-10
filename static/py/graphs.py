@@ -3,6 +3,8 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from datetime import datetime
+import io
+import base64
 
 # Function to preprocess the Form 4 data from CSV
 def preprocess_form_4_data(csv_file):
@@ -55,8 +57,13 @@ def generate_stock_plot(df):
     ax1.set_title('Acquired vs Disposed Amounts Over Time')
     ax1.legend()
     plt.xticks(rotation=45)
-    plt.savefig('static/img/finalgraph.png')
+
+    # Render to an in-memory buffer and return as base64 (serverless filesystems are read-only).
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png', bbox_inches='tight')
     plt.close(fig)
+    buf.seek(0)
+    return base64.b64encode(buf.read()).decode('utf-8')
 
 # Function to generate a stock analysis report
 def generate_stock_analysis(df):
