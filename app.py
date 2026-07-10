@@ -3,7 +3,7 @@ import csv
 import requests
 import json
 import os
-from google import genai
+from anthropic import Anthropic
 from static.py.graphs import preprocess_form_4_data, generate_stock_plot, generate_stock_analysis
 from static.py.sec_form_4_scraper import scrape_form_4
 
@@ -117,18 +117,25 @@ def analysis():
         company_data = ["No companies found"]
         print(f"Error reading companies: {e}")
 
-    api_key = os.environ.get("GEMINI_API_KEY")
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
         return render_template('analysis.html',
-                               output="AI analysis is unavailable: the GEMINI_API_KEY environment variable is not set.")
+                               output="AI analysis is unavailable: the ANTHROPIC_API_KEY environment variable is not set.")
+
+    prompt = ("The following data is from Form 4 Filings. Don't italicize or bold any text. "
+              "Don't give any background on Form 4 Filings or confirm you understood the prompt "
+              "or have any headers or anything like that. All i want you to do is to explain "
+              "possible reasons for the trends in this data, especially based on current news "
+              "regarding the company, in a numbered list format:" + str(company_data))
 
     try:
-        client = genai.Client(api_key=api_key)
-        response = client.models.generate_content(
-            model="gemini-2.0-flash",
-            contents="The following data is from Form 4 Filings. Don't italicize or bold any text. Don't give any background on Form 4 Filings or confirm you understood the prompt or have any headers or anything like that. All i want you to do is to explain possible reasons for the trends in this data, especially based on current news regarding the company, in a numbered list format:" + str(company_data)
+        client = Anthropic(api_key=api_key)
+        response = client.messages.create(
+            model="claude-opus-4-8",
+            max_tokens=16000,
+            messages=[{"role": "user", "content": prompt}],
         )
-        output = response.text
+        output = "".join(block.text for block in response.content if block.type == "text")
     except Exception as e:
         output = f"AI analysis failed: {e}"
 
