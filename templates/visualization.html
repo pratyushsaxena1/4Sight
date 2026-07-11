@@ -2,19 +2,29 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Stock Visualization</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Stock Visualization | 4Sight</title>
     <link rel="stylesheet" href="../static/css/indexStyle.css">
 </head>
 <body>
     <div class="mainContainer">
+        <header class="siteHeader">
+            <h2 class="wordmark"><a href="/">4<span class="mark-accent">Sight</span></a></h2>
+            <p class="headerTag">Insider Trading Intelligence</p>
+        </header>
+
         <h1>Stock Visualization</h1>
+        <p class="lede">Chart the total shares insiders acquired versus disposed over time, so buying and selling pressure is easy to compare at a glance.</p>
+
         <form method="GET" action="/visualization">
-            <input type="text" name="company" id="companySearchText" placeholder="Search a company to visualize..." value="{{ request.args.get('company', '') }}">
-            <button type="submit" id="searchCompanyButton">Visualize</button>
+            <div class="searchRow">
+                <input type="text" name="company" id="companySearchText" placeholder="Search a company to visualize" value="{{ request.args.get('company', '') }}">
+                <button type="submit" id="searchCompanyButton">Visualize</button>
+            </div>
         </form>
 
         {% if selected_company %}
-        <h3>{{ selected_company }}</h3>
+        <p class="selectedCompany"><span class="label">Showing</span>{{ selected_company }}</p>
         {% endif %}
 
         {% if error %}
@@ -27,7 +37,7 @@
         <p class="message">No visualization available.</p>
         {% endif %}
 
-        <button onclick="window.location.href='/'">Back to Home</button>
+        <button type="button" class="backButton" onclick="window.location.href='/'">&#8592; Back to Home</button>
     </div>
 </body>
 </html>

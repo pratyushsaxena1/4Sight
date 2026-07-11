@@ -1,134 +1,364 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300..900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+    --bg: #0b0c0e;
+    --surface: #15171b;
+    --surface-2: #1b1e23;
+    --border: #24272e;
+    --border-strong: #313640;
+    --text: #e8eaed;
+    --text-muted: #8b9099;
+    --text-dim: #6a6f78;
+    --accent: #5b9dff;
+    --accent-dim: #2f4a78;
+    --acquired: #2ec96b;
+    --disposed: #f0555f;
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --radius: 10px;
+}
+
+* {
+    box-sizing: border-box;
+}
 
 body {
-    background-color: black;
-    color: #f5f5f5;
+    background-color: var(--bg);
+    color: var(--text);
     font-family: "Inter", sans-serif;
     margin: 0;
     padding: 0;
-    text-align: center;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+}
+
+.mainContainer {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem 4rem;
+    text-align: left;
+}
+
+/* ---------- Header ---------- */
+
+.siteHeader {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    padding-bottom: 0.25rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1.5rem;
+}
+
+.wordmark {
+    font-size: 1.55rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin: 0;
+}
+
+.wordmark a {
+    color: var(--text);
+    text-decoration: none;
+}
+
+.wordmark .mark-accent {
+    color: var(--accent);
+}
+
+.headerTag {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin: 0;
 }
 
 h1 {
-    font-size: 3em;
+    font-size: 2rem;
     font-weight: 700;
-    margin-bottom: 0.5em;
+    letter-spacing: -0.02em;
+    margin: 0 0 0.5rem;
 }
 
-pre {
-    white-space: pre-line;
-    text-align: left;
-    max-width: 760px;
-    margin: 1.5em auto;
-    line-height: 1.6;
-    font-family: "Inter", sans-serif;
-    font-size: 1.05em;
+.lede {
+    max-width: 640px;
+    color: var(--text-muted);
+    font-size: 1.02rem;
+    margin: 0 0 0.4rem;
 }
+
+.subLede {
+    max-width: 640px;
+    color: var(--text-dim);
+    font-size: 0.9rem;
+    margin: 0 0 2rem;
+}
+
+/* ---------- Search + actions ---------- */
+
+.searchRow {
+    display: flex;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+    max-width: 620px;
+}
+
+#companySearchText {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.98rem;
+    padding: 0.75rem 0.9rem;
+    border: 1px solid var(--border-strong);
+    background-color: var(--surface);
+    color: var(--text);
+    border-radius: var(--radius);
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+#companySearchText:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(91, 157, 255, 0.18);
+}
+
+::placeholder {
+    color: var(--text-dim);
+}
+
+button {
+    font-family: "Inter", sans-serif;
+    font-size: 0.95rem;
+    font-weight: 500;
+    padding: 0.75rem 1.15rem;
+    border: 1px solid var(--border-strong);
+    background-color: var(--surface-2);
+    color: var(--text);
+    cursor: pointer;
+    border-radius: var(--radius);
+    transition: background 0.15s, border-color 0.15s;
+    white-space: nowrap;
+}
+
+button:hover {
+    background-color: #23262c;
+    border-color: var(--border-strong);
+}
+
+button:active {
+    background-color: #2a2e35;
+}
+
+/* Primary search button */
+#searchCompanyButton {
+    background-color: var(--accent);
+    border-color: var(--accent);
+    color: #0a1220;
+    font-weight: 600;
+}
+
+#searchCompanyButton:hover {
+    background-color: #6fa9ff;
+    border-color: #6fa9ff;
+}
+
+/* Secondary action row */
+.actionRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-bottom: 1.75rem;
+}
+
+.actionRow button {
+    background-color: transparent;
+}
+
+.actionRow button:hover {
+    background-color: var(--surface);
+}
+
+.backButton {
+    margin-top: 2rem;
+    background-color: transparent;
+}
+
+/* ---------- Table ---------- */
+
+#companyTable {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0.5rem 0 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    font-size: 0.92rem;
+}
+
+#companyTable th,
+#companyTable td {
+    padding: 0.7rem 0.95rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+
+#companyTable th {
+    background-color: var(--surface-2);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+/* Numeric columns: mono, right-aligned */
+#companyTable td.num,
+#companyTable th.num {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    white-space: nowrap;
+}
+
+#companyTable td.date {
+    font-family: var(--mono);
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+#companyTable tbody tr:last-child td {
+    border-bottom: none;
+}
+
+#companyTable tbody tr:hover {
+    background-color: var(--surface-2);
+}
+
+/* A/D badge */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
+.badge-acquired {
+    color: var(--acquired);
+    background: rgba(46, 201, 107, 0.12);
+}
+
+.badge-disposed {
+    color: var(--disposed);
+    background: rgba(240, 85, 95, 0.12);
+}
+
+/* ---------- Messages & footnotes ---------- */
+
+.message {
+    color: var(--text-muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.1rem 1.25rem;
+    margin: 1.5rem 0;
+    max-width: 640px;
+}
+
+.footnote {
+    color: var(--text-dim);
+    font-size: 0.82rem;
+    margin: 0.75rem 0 0;
+    max-width: 640px;
+}
+
+.selectedCompany {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 1.5rem 0 1rem;
+}
+
+.selectedCompany .label {
+    color: var(--text-dim);
+    font-weight: 400;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: block;
+    margin-bottom: 0.2rem;
+}
+
+/* ---------- Chart card ---------- */
 
 .chartCard {
-    max-width: 900px;
-    margin: 1.5em auto;
+    margin: 1rem 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.75rem;
+    overflow-x: auto;
 }
 
 .chartCard img {
     width: 100%;
     height: auto;
-    border-radius: 12px;
-    background: #fff;
-    border: 1px solid #2a2a2a;
     display: block;
+    border-radius: 6px;
 }
 
-.message {
-    color: #b0b0b0;
-    margin: 2em auto;
+/* ---------- Analysis report ---------- */
+
+.reportCard {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem 1.75rem;
+    margin: 1rem 0;
+    max-width: 760px;
 }
 
-.mainContainer {
-    text-align: center;
-    padding: 2em;
-}
-
-#companySearchText {
-    width: 40%;
-    font-size: 1em;
-    padding: 0.7em;
-    border: 1px solid #ffffff;
-    background-color: #1e1e1e;
-    color: #f5f5f5;
-    border-radius: 8px;
-    outline: none;
-}
-
-#searchCompanyButton {
-    width: 15%;
-    font-size: 1em;
-    padding: 0.7em;
-    border: none;
-    background-color: #2a2a2a;
-    color: white;
-    cursor: pointer;
-    border-radius: 8px;
-    transition: background 0.3s;
-}
-
-#searchCompanyButton:hover {
-    background-color: #3a3a3a;
-}
-
-#searchCompanyButton:active {
-    background-color: #505050;
-    box-shadow: inset 0px 0px 10px #888;
-}
-
-button {
+.reportCard pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    text-align: left;
+    margin: 0;
+    line-height: 1.7;
     font-family: "Inter", sans-serif;
-    width: 25%;
-    font-size: 1em;
-    padding: 1em;
-    border: none;
-    background-color: #2a2a2a;
-    color: white;
-    cursor: pointer;
-    border-radius: 8px;
-    transition: background 0.3s;
-    margin: 1em;
+    font-size: 1rem;
+    color: var(--text);
 }
 
-button:hover {
-    background-color: #3a3a3a;
-}
+/* ---------- Responsive ---------- */
 
-button:active {
-    background-color: #505050;
-    box-shadow: inset 0px 0px 10px #888;
-}
+@media (max-width: 620px) {
+    .mainContainer {
+        padding: 2rem 1.1rem 3rem;
+    }
 
-::placeholder {
-    color: #b0b0b0;
-}
+    .searchRow {
+        flex-direction: column;
+    }
 
-#companyTable {
-    width: 70%;
-    text-align: center;
-    border: 1px solid white; 
-    border-collapse: collapse;
-    margin: 2em auto;
-    background: black;
-    border-radius: 12px;
-}
+    .siteHeader {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+    }
 
-#companyTable th, #companyTable td {
-    padding: 1em;
-    border: 1px solid white;
-    border-bottom: 1px solid white;
-}
+    h1 {
+        font-size: 1.6rem;
+    }
 
-#companyTable th {
-    background-color: #2a2a2a;
-    font-size: 1.2em;
-}
+    #companyTable {
+        font-size: 0.82rem;
+    }
 
-#companyTable tr:nth-child(even) {
-    background-color: #181818;
+    #companyTable th,
+    #companyTable td {
+        padding: 0.55rem 0.6rem;
+    }
 }

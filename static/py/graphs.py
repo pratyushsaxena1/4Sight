@@ -2,6 +2,7 @@ import pandas as pd
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+from matplotlib.patches import Patch
 from datetime import datetime
 import io
 import base64
@@ -42,25 +43,48 @@ def generate_stock_plot(df):
         average_price=('Price', 'mean')
     ).reset_index()
 
+    # Dark theme to match the site UI.
+    bg = '#15171b'
+    grid = '#24272e'
+    text = '#8b9099'
+    acquired = '#2ec96b'
+    disposed = '#f0555f'
+
     # Plotting the data
     fig, ax1 = plt.subplots(figsize=(12, 6))
+    fig.patch.set_facecolor(bg)
+    ax1.set_facecolor(bg)
 
     # Bar plot for total amount
     ax1.bar(df_grouped[df_grouped['Acquired_Disposed'] == 'Acquired']['Transaction Date'],
-            df_grouped[df_grouped['Acquired_Disposed'] == 'Acquired']['total_amount'], color='green', label='Acquired', alpha=0.6)
+            df_grouped[df_grouped['Acquired_Disposed'] == 'Acquired']['total_amount'], color=acquired, label='Acquired', alpha=0.85)
     ax1.bar(df_grouped[df_grouped['Acquired_Disposed'] == 'Disposed']['Transaction Date'],
-            df_grouped[df_grouped['Acquired_Disposed'] == 'Disposed']['total_amount'], color='red', label='Disposed', alpha=0.6)
+            df_grouped[df_grouped['Acquired_Disposed'] == 'Disposed']['total_amount'], color=disposed, label='Disposed', alpha=0.85)
 
     # Labels and title
-    ax1.set_xlabel('Transaction Date')
-    ax1.set_ylabel('Total Amount')
-    ax1.set_title('Acquired vs Disposed Amounts Over Time')
-    ax1.legend()
+    ax1.set_xlabel('Transaction Date', color=text)
+    ax1.set_ylabel('Total Shares', color=text)
+    ax1.set_title('Shares Acquired vs Disposed Over Time', color='#e8eaed', fontsize=13, pad=14)
+
+    # Style axes, ticks, grid and spines for the dark background.
+    ax1.tick_params(colors=text, labelsize=9)
+    ax1.grid(axis='y', color=grid, linewidth=0.8)
+    ax1.set_axisbelow(True)
+    for spine in ax1.spines.values():
+        spine.set_color(grid)
+    # Explicit legend handles so the swatch colors stay correct even when one of
+    # the two series has no rows (e.g. an all-disposed company).
+    legend_handles = [
+        Patch(facecolor=acquired, label='Acquired'),
+        Patch(facecolor=disposed, label='Disposed'),
+    ]
+    ax1.legend(handles=legend_handles, facecolor=bg, edgecolor=grid, labelcolor=text)
+
     plt.xticks(rotation=45)
 
     # Render to an in-memory buffer and return as base64 (serverless filesystems are read-only).
     buf = io.BytesIO()
-    fig.savefig(buf, format='png', bbox_inches='tight')
+    fig.savefig(buf, format='png', bbox_inches='tight', facecolor=bg)
     plt.close(fig)
     buf.seek(0)
     return base64.b64encode(buf.read()).decode('utf-8')

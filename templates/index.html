@@ -1,40 +1,67 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>4Sight</title>
     <link rel="stylesheet" href="../static/css/indexStyle.css">
 </head>
 <body>
     <div class="mainContainer">
-        <h1>4Sight</h1>
+        <header class="siteHeader">
+            <h2 class="wordmark"><a href="/">4<span class="mark-accent">Sight</span></a></h2>
+            <p class="headerTag">Insider Trading Intelligence</p>
+        </header>
+
+        <h1>See what insiders are doing.</h1>
+        <p class="lede">4Sight pulls SEC Form 4 filings so you can track the shares company insiders buy and sell, chart the activity over time, and read an AI breakdown of what the moves might mean.</p>
+        <p class="subLede">A Form 4 is the disclosure an officer, director, or major shareholder files with the SEC after trading their own company's stock.</p>
+
         <form method="POST" action="/">
-            <input type="text" name="companySearchText" id="companySearchText" placeholder="Search here for company name..." value="{{ request.form.get('companySearchText', '') }}">
-            <button type="submit" id="searchCompanyButton">Submit</button>
+            <div class="searchRow">
+                <input type="text" name="companySearchText" id="companySearchText" placeholder="Search a company name or ticker, e.g. Apple or MSFT" value="{{ request.form.get('companySearchText', '') }}">
+                <button type="submit" id="searchCompanyButton">Search</button>
+            </div>
         </form>
-        <button type="submit" id="graphsButton" onclick="window.location.href='/visualization?company={{ search_query|urlencode }}'">Stock Visualization</button>
-        <button type="submit" id="analysisButton" onclick="window.location.href='/analysis?company={{ search_query|urlencode }}'">AI Stock Analysis</button>
-        <p>*If the price is N/A, the stock was likely purchased through an alternative means, such as by trading another stock</p>
+        <div class="actionRow">
+            <button type="button" id="graphsButton" onclick="window.location.href='/visualization?company={{ search_query|urlencode }}'">Stock Visualization</button>
+            <button type="button" id="analysisButton" onclick="window.location.href='/analysis?company={{ search_query|urlencode }}'">AI Stock Analysis</button>
+        </div>
+
         {% if data %}
         <table id="companyTable">
-            <tr>
-                <th>Company Name</th>
-                <th>Form 4 Filing Date</th>
-                <th>Acquired (A) or Disposed (D)</th>
-                <th>Amount of Shares</th>
-                <th>Price Per Share</th>
-            </tr>
+            <thead>
+                <tr>
+                    <th>Company</th>
+                    <th>Filing Date</th>
+                    <th>Transaction</th>
+                    <th class="num">Shares</th>
+                    <th class="num">Price / Share</th>
+                </tr>
+            </thead>
+            <tbody>
             {% for row in data %}
                 {% if row[4] and row[0] and row[1] and row[2] and row[3] %}
                 <tr>
                     <td>{{ row[0] }}</td>
-                    <td>{{ row[1] }}</td>
-                    <td>{{ row[2] }}</td>
-                    <td>{{ row[3] }}</td>
-                    <td>{{ row[4] }}</td>
+                    <td class="date">{{ row[1] }}</td>
+                    <td>
+                        {% if row[2] == 'A' %}
+                        <span class="badge badge-acquired">&#9650; Acquired</span>
+                        {% elif row[2] == 'D' %}
+                        <span class="badge badge-disposed">&#9660; Disposed</span>
+                        {% else %}
+                        {{ row[2] }}
+                        {% endif %}
+                    </td>
+                    <td class="num">{{ row[3] }}</td>
+                    <td class="num">{{ row[4] }}</td>
                 </tr>
                 {% endif %}
             {% endfor %}
+            </tbody>
         </table>
+        <p class="footnote">If a price shows N/A, the shares were likely acquired through an alternative means, such as by exchanging another security rather than buying at market.</p>
         {% elif search_query %}
         <p class="message">No recent Form 4 transactions found for "{{ search_query }}". Try a company name or ticker like "Apple" or "MSFT".</p>
         {% endif %}
