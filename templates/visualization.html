@@ -4,30 +4,30 @@
     <meta charset="UTF-8">
     <title>Stock Visualization</title>
     <link rel="stylesheet" href="../static/css/indexStyle.css">
-    <style>
-        img {
-            max-width: 90%;
-            height: auto;
-            margin-top: 20px;
-            border: 1px solid #ccc;
-            border-radius: 10px;
-            background: #fff;
-        }
-    </style>
 </head>
 <body>
-    <form method="GET" action="/visualization">
-        <input type="text" name="company" placeholder="Search a company to visualize..." value="{{ request.args.get('company', '') }}">
-        <button type="submit">Visualize</button>
-    </form>
-    <h3>{{ selected_company }} Stock Price Visualization</h3>
-    {% if error %}
-    <p>{{ error }}</p>
-    {% elif plot_img %}
-    <img src="data:image/png;base64,{{ plot_img }}" alt="Stock Chart" />
-    {% else %}
-    <p>No visualization available.</p>
-    {% endif %}
-    <button onclick="window.location.href='/'">Back to Home</button>
+    <div class="mainContainer">
+        <h1>Stock Visualization</h1>
+        <form method="GET" action="/visualization">
+            <input type="text" name="company" id="companySearchText" placeholder="Search a company to visualize..." value="{{ request.args.get('company', '') }}">
+            <button type="submit" id="searchCompanyButton">Visualize</button>
+        </form>
+
+        {% if selected_company %}
+        <h3>{{ selected_company }}</h3>
+        {% endif %}
+
+        {% if error %}
+        <p class="message">{{ error }}</p>
+        {% elif plot_img %}
+        <div class="chartCard">
+            <img src="data:image/png;base64,{{ plot_img }}" alt="{{ selected_company }} Form 4 activity chart" />
+        </div>
+        {% else %}
+        <p class="message">No visualization available.</p>
+        {% endif %}
+
+        <button onclick="window.location.href='/'">Back to Home</button>
+    </div>
 </body>
 </html>
