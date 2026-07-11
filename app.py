@@ -121,23 +121,45 @@ def visualization():
                            plot_img=plot_img,
                            error=error)
 
-@app.route('/analysis')
+@app.route('/analysis', methods=['GET', 'POST'])
 def analysis():
+    # Analyze the company passed from the home page (?company=...) or the search
+    # box on this page. Without one, fall back to the bundled snapshot.
+    company = request.values.get('company', '').strip()
+    selected_company = None
+    company_data = []
+
     try:
-        with open(BUNDLED_CSV, 'r') as file:
-            csv_reader = csv.reader(file)
-            next(csv_reader)
-            company_data = [row for row in csv_reader if row]
+        if company:
+            cik = get_cik_from_ticker(get_ticker(company))
+            scraped = scrape_form_4(cik)
+            if not scraped.empty:
+                company_data = scraped.values.tolist()
+                selected_company = company.title()
+        else:
+            with open(BUNDLED_CSV, 'r') as file:
+                csv_reader = csv.reader(file)
+                next(csv_reader)
+                company_data = [row for row in csv_reader if row]
+                selected_company = "Amazon (sample data)"
     except Exception as e:
-        company_data = ["No companies found"]
-        print(f"Error reading companies: {e}")
+        print(f"Analysis data error: {e}")
+
+    # Gather data before spending anything on the model: bail out (no API call)
+    # if there's nothing to analyze or no key configured.
+    if not company_data:
+        msg = (f"No Form 4 data found for '{company}'." if company
+               else "No data available to analyze.")
+        return render_template('analysis.html', output=msg, selected_company=selected_company)
 
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
         return render_template('analysis.html',
-                               output="AI analysis is unavailable: the ANTHROPIC_API_KEY environment variable is not set.")
+                               output="AI analysis is unavailable: the ANTHROPIC_API_KEY environment variable is not set.",
+                               selected_company=selected_company)
 
-    prompt = ("The following data is from Form 4 Filings. Don't italicize or bold any text. "
+    label = selected_company or "this company"
+    prompt = (f"The following data is from {label}'s SEC Form 4 filings. Don't italicize or bold any text. "
               "Don't give any background on Form 4 Filings or confirm you understood the prompt "
               "or have any headers or anything like that. All i want you to do is to explain "
               "possible reasons for the trends in this data, especially based on current news "
@@ -154,7 +176,7 @@ def analysis():
     except Exception as e:
         output = f"AI analysis failed: {e}"
 
-    return render_template('analysis.html', output=output)
+    return render_template('analysis.html', output=output, selected_company=selected_company)
 
 if __name__ == '__main__':
     app.run(debug=True)

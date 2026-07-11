@@ -7,6 +7,13 @@
 <body>
     <div class="mainContainer">
         <h1>AI Stock Analysis</h1>
+        <form method="GET" action="/analysis">
+            <input type="text" name="company" id="companySearchText" placeholder="Search a company to analyze..." value="{{ request.args.get('company', '') }}">
+            <button type="submit" id="searchCompanyButton">Analyze</button>
+        </form>
+        {% if selected_company %}
+        <h3>{{ selected_company }}</h3>
+        {% endif %}
         <pre>{{ output }}</pre>
         <button onclick="window.location.href='/'">Back to Home</button>
     </div>
