@@ -275,6 +275,11 @@ button:active {
     margin: 0.75rem 0 0;
 }
 
+.tableNote {
+    margin: 0 auto 0.85rem;
+    max-width: 720px;
+}
+
 .selectedCompany {
     font-size: 1.1rem;
     font-weight: 600;

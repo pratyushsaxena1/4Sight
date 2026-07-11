@@ -13,8 +13,7 @@
         </header>
 
         <h1>See what insiders are doing.</h1>
-        <p class="lede">4Sight pulls SEC Form 4 filings so you can track the shares company insiders buy and sell, chart the activity over time, and read an AI breakdown of what the moves might mean.</p>
-        <p class="subLede">A Form 4 is the disclosure an officer, director, or major shareholder files with the SEC after trading their own company's stock.</p>
+        <p class="lede">4Sight tracks SEC Form 4 filings, the disclosures insiders file after trading their own company's stock, so you can see the shares they buy and sell, chart the activity, and get an AI read on the moves.</p>
 
         <form method="POST" action="/">
             <div class="searchRow">
@@ -28,6 +27,7 @@
         </div>
 
         {% if data %}
+        <p class="footnote tableNote">A price of N/A means the shares were acquired through an alternative means, such as by exchanging another security rather than buying at market.</p>
         <table id="companyTable">
             <thead>
                 <tr>
@@ -60,7 +60,6 @@
             {% endfor %}
             </tbody>
         </table>
-        <p class="footnote">If a price shows N/A, the shares were likely acquired through an alternative means, such as by exchanging another security rather than buying at market.</p>
         {% elif search_query %}
         <p class="message">No recent Form 4 transactions found for "{{ search_query }}". Try a company name or ticker like "Apple" or "MSFT".</p>
         {% endif %}
