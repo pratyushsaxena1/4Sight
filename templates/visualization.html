@@ -16,8 +16,14 @@
     </style>
 </head>
 <body>
+    <form method="GET" action="/visualization">
+        <input type="text" name="company" placeholder="Search a company to visualize..." value="{{ request.args.get('company', '') }}">
+        <button type="submit">Visualize</button>
+    </form>
     <h3>{{ selected_company }} Stock Price Visualization</h3>
-    {% if plot_img %}
+    {% if error %}
+    <p>{{ error }}</p>
+    {% elif plot_img %}
     <img src="data:image/png;base64,{{ plot_img }}" alt="Stock Chart" />
     {% else %}
     <p>No visualization available.</p>

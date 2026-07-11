@@ -76,35 +76,47 @@ def index():
             next(csv_reader)
             data = list(csv_reader)
     data = preprocess_data(data)
-    return render_template('index.html', data=data)
+    return render_template('index.html', data=data, search_query=search_query)
 
 @app.route('/visualization', methods=['GET', 'POST'])
 def visualization():
-    companies = []
+    # The company to visualize comes from the home-page search (passed through as
+    # ?company=...) or the search box on this page. Without it, fall back to the
+    # bundled snapshot.
+    company = request.values.get('company', '').strip()
     selected_company = None
     plot_img = None
-    stock_analysis = None
+    error = None
+    df = None
 
     try:
-        df = preprocess_form_4_data(BUNDLED_CSV)
-        companies = list(set(df['Title']))
-        if companies:
-            selected_company = companies[0]
-            # Filter data for the selected company
-            company_data = df[df['Title'] == selected_company]
+        if company:
+            # Scrape the requested company live, exactly like the home search.
+            cik = get_cik_from_ticker(get_ticker(company))
+            scraped = scrape_form_4(cik)
+            if scraped.empty:
+                error = f"No Form 4 data found for '{company}'."
+            else:
+                scraped.to_csv(WRITABLE_CSV, index=False)
+                df = preprocess_form_4_data(WRITABLE_CSV)
+                selected_company = company.title()
+        else:
+            df = preprocess_form_4_data(BUNDLED_CSV)
+            selected_company = df['Title'].mode()[0] if not df.empty else None
 
-            # Generate plot (returned as a base64 PNG) and analysis
-            plot_img = generate_stock_plot(company_data)
-            stock_analysis = generate_stock_analysis(company_data)
+        if error is None and df is not None and not df.empty:
+            # Plot all of the company's filings (one company per page).
+            plot_img = generate_stock_plot(df)
+        elif error is None:
+            error = "No data available to visualize."
     except Exception as e:
-        companies = ["No companies found"]
-        print(f"Error reading companies: {e}")
+        error = f"Could not build visualization for '{company}': {e}"
+        print(f"Visualization error: {e}")
 
     return render_template('visualization.html',
-                           companies=companies,
                            selected_company=selected_company,
                            plot_img=plot_img,
-                           stock_analysis=stock_analysis)
+                           error=error)
 
 @app.route('/analysis')
 def analysis():
