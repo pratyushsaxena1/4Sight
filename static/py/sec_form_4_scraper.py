@@ -5,9 +5,14 @@ import sys
 import re
 import xml.etree.ElementTree as ET
 
+# SEC's fair-access policy returns 403 ("Undeclared Automated Tool") for
+# browser-spoofed User-Agents. It requires a declared User-Agent that names the
+# app and a contact email. See https://www.sec.gov/os/webmaster-faq#developers
+SEC_USER_AGENT = "4Sight Form4 Viewer admin@4sight.app"
+
 def get_form_4_filings(cik):
     base_url = f"https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK={cik}&type=4&count=100&output=atom"
-    headers = {"User-Agent": 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Mobile Safari/537.36'}
+    headers = {"User-Agent": SEC_USER_AGENT}
     try:
         response = requests.get(base_url, headers=headers)
         if response.status_code == 200:
@@ -29,7 +34,7 @@ def get_form_4_filings(cik):
         return None
 
 def find_wk_form4_links(page_url, cik):
-    headers = {"User-Agent": 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Mobile Safari/537.36'}
+    headers = {"User-Agent": SEC_USER_AGENT}
     try:
         response = requests.get(page_url, headers=headers)
         if response.status_code == 200:
@@ -64,20 +69,27 @@ def categorize_links(links):
 
 import requests
 
+_company_name_cache = {}
+
 def get_company_name(cik):
     cik = str(cik).zfill(10)  # Ensure CIK is 10 digits long
+    # The company name is constant per CIK, but parse_html_form_4 asks for it on
+    # every row — cache it so we make one network call per company, not per row.
+    if cik in _company_name_cache:
+        return _company_name_cache[cik]
     url = f"https://data.sec.gov/submissions/CIK{cik}.json"
-    headers = {"User-Agent": 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Mobile Safari/537.36'}
+    headers = {"User-Agent": SEC_USER_AGENT}
     response = requests.get(url, headers=headers)
-    
+
     if response.status_code == 200:
-        data = response.json()
-        return data.get("name", "Company name not found")
+        name = response.json().get("name", "Company name not found")
+        _company_name_cache[cik] = name
+        return name
     else:
         return "Invalid CIK or request failed"
 
 def parse_html_form_4(url, cik):
-    headers = {"User-Agent": 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Mobile Safari/537.36'}
+    headers = {"User-Agent": SEC_USER_AGENT}
     try:
         response = requests.get(url, headers=headers)
         if response.status_code == 200:
@@ -111,7 +123,7 @@ def parse_html_form_4(url, cik):
         return pd.DataFrame()
 
 def parse_xml_form_4(url, cik):
-    headers = {"User-Agent": 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Mobile Safari/537.36'}
+    headers = {"User-Agent": SEC_USER_AGENT}
     try:
         response = requests.get(url, headers=headers)
         if response.status_code == 200:
@@ -135,18 +147,24 @@ def parse_xml_form_4(url, cik):
         print(f"Error: {e}")
         return pd.DataFrame()
 
-def scrape_form_4(cik):
+def scrape_form_4(cik, max_filings=25):
     """Scrape Form 4 filings for a CIK and return a DataFrame (empty if none found).
 
     Runs entirely in-process so it works on serverless platforms where spawning
     a `python3` subprocess and writing to the project directory are not possible.
+    Only the most recent `max_filings` filings are processed so a live scrape
+    fits inside a serverless function's time limit (each filing costs several
+    sequential SEC requests).
     """
     df = get_form_4_filings(cik)
     if df is None:
         return pd.DataFrame()
 
+    # The atom feed returns filings most-recent-first; cap how many we fetch.
+    links = list(df['Link'])[:max_filings]
+
     all_matched_links = []
-    for link in df['Link']:
+    for link in links:
         all_matched_links.extend(find_wk_form4_links(link, cik))
     if not all_matched_links:
         return pd.DataFrame()
