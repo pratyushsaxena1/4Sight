@@ -8,12 +8,13 @@
     <div class="mainContainer">
         <h1>4Sight</h1>
         <form method="POST" action="/">
-            <input type="text" name="companySearchText" id="companySearchText" placeholder="Search here for company name...">
+            <input type="text" name="companySearchText" id="companySearchText" placeholder="Search here for company name..." value="{{ request.form.get('companySearchText', '') }}">
             <button type="submit" id="searchCompanyButton">Submit</button>
         </form>
         <button type="submit" id="graphsButton" onclick="window.location.href='/visualization?company={{ search_query|urlencode }}'">Stock Visualization</button>
         <button type="submit" id="analysisButton" onclick="window.location.href='/analysis'">AI Stock Analysis</button>
         <p>*If the price is N/A, the stock was likely purchased through an alternative means, such as by trading another stock</p>
+        {% if data %}
         <table id="companyTable">
             <tr>
                 <th>Company Name</th>
@@ -34,6 +35,9 @@
                 {% endif %}
             {% endfor %}
         </table>
+        {% elif search_query %}
+        <p class="message">No recent Form 4 transactions found for "{{ search_query }}". Try a company name or ticker like "Apple" or "MSFT".</p>
+        {% endif %}
     </div>
 </body>
 </html>

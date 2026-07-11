@@ -2,15 +2,18 @@ import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 import sys
-import re
 import xml.etree.ElementTree as ET
+from datetime import datetime
 
 # SEC's fair-access policy returns 403 ("Undeclared Automated Tool") for
 # browser-spoofed User-Agents. It requires a declared User-Agent that names the
 # app and a contact email. See https://www.sec.gov/os/webmaster-faq#developers
 SEC_USER_AGENT = "4Sight Form4 Viewer admin@4sight.app"
 
+
 def get_form_4_filings(cik):
+    """Return a DataFrame of a company's recent Form 4 filings (most recent first),
+    each with a link to the filing's index page."""
     base_url = f"https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK={cik}&type=4&count=100&output=atom"
     headers = {"User-Agent": SEC_USER_AGENT}
     try:
@@ -33,119 +36,81 @@ def get_form_4_filings(cik):
         print(f"Error: {e}")
         return None
 
-def find_wk_form4_links(page_url, cik):
+
+def find_form4_xml(index_url):
+    """Return the URL of a filing's primary Form 4 XML (the machine-readable
+    `ownershipDocument`), or None.
+
+    Every Form 4 has one, regardless of which vendor filed it. On the index page
+    the bare `*.xml` link is the data document; the `xslF345X0*/...` link is only
+    its human-readable HTML rendering, so we skip that one.
+    """
     headers = {"User-Agent": SEC_USER_AGENT}
     try:
-        response = requests.get(page_url, headers=headers)
-        if response.status_code == 200:
-            soup = BeautifulSoup(response.content, 'html.parser')
-            pattern1 = re.compile(r'wk-form4_.*\.xml', re.IGNORECASE)
-            pattern2 = re.compile(r'edgardoc', re.IGNORECASE)
-            matched_links = []
-            for a_tag in soup.find_all('a', href=True):
-                href = a_tag['href']
-                if pattern1.search(href):
-                    matched_links.append("https://sec.gov" + href)
-                if pattern2.search(href):
-                    matched_links.append("https://sec.gov" + href)
-            return matched_links
-        else:
-            return []
+        response = requests.get(index_url, headers=headers)
+        if response.status_code != 200:
+            return None
+        soup = BeautifulSoup(response.content, 'html.parser')
+        for a_tag in soup.find_all('a', href=True):
+            href = a_tag['href']
+            if href.lower().endswith('.xml') and 'xslf345' not in href.lower():
+                return "https://www.sec.gov" + href
     except Exception as e:
-        print(f"Error fetching page {page_url}: {e}")
-        return []
+        print(f"Error fetching index {index_url}: {e}")
+    return None
 
-def categorize_links(links):
-    type_1 = []
-    type_2 = []
-    
-    for link in links:
-        if 'xslF345X05' in link:
-            type_1.append(link)
-        else:
-            type_2.append(link)
-    
-    return type_1, type_2
 
-import requests
+def parse_form4_xml(url):
+    """Parse a Form 4 ownership XML into non-derivative transaction rows.
 
-_company_name_cache = {}
-
-def get_company_name(cik):
-    cik = str(cik).zfill(10)  # Ensure CIK is 10 digits long
-    # The company name is constant per CIK, but parse_html_form_4 asks for it on
-    # every row — cache it so we make one network call per company, not per row.
-    if cik in _company_name_cache:
-        return _company_name_cache[cik]
-    url = f"https://data.sec.gov/submissions/CIK{cik}.json"
-    headers = {"User-Agent": SEC_USER_AGENT}
-    response = requests.get(url, headers=headers)
-
-    if response.status_code == 200:
-        name = response.json().get("name", "Company name not found")
-        _company_name_cache[cik] = name
-        return name
-    else:
-        return "Invalid CIK or request failed"
-
-def parse_html_form_4(url, cik):
+    The `ownershipDocument` schema is standardized by the SEC, so this works for
+    any company. Rows are formatted to match the app's expected CSV columns.
+    """
     headers = {"User-Agent": SEC_USER_AGENT}
     try:
         response = requests.get(url, headers=headers)
-        if response.status_code == 200:
-            soup = BeautifulSoup(response.content, 'html.parser')
-            transactions = []
-            th_element = soup.find('th', attrs={'class':'FormTextC', 'colspan':'11'})
-            non_deriv_table = th_element.find_parent('table')
-            if non_deriv_table:
-                rows = non_deriv_table.find_all('tr')
-                if rows:
-                    for row in rows[1:]:
-                        columns = row.find_all('td')
-                        if len(columns) >= 7:
-                            transaction_date = columns[1].text.strip()
-                            acquired_disposed = columns[6].text.strip()
-                            amount = columns[5].text.strip()
-                            price = columns[7].text.strip()
-                            transactions.append({
-                                'Title': get_company_name(cik),
-                                'Transaction Date': transaction_date,
-                                'Acquired_Disposed': acquired_disposed,
-                                'Amount': amount,
-                                'Price': price if price != '$0' else 'N/A'
-                            })
-
-            return pd.DataFrame(transactions) if transactions else pd.DataFrame()
-        else:
+        if response.status_code != 200:
             return pd.DataFrame()
+        root = ET.fromstring(response.content)
+        issuer = (root.findtext('.//issuer/issuerName') or '').strip() or 'Unknown'
+
+        rows = []
+        for txn in root.findall('.//nonDerivativeTransaction'):
+            date = txn.findtext('.//transactionDate/value')
+            shares = txn.findtext('.//transactionShares/value')
+            acquired_disposed = txn.findtext('.//transactionAcquiredDisposedCode/value')
+            price = txn.findtext('.//transactionPricePerShare/value')
+
+            # A Form 4 may also hold derivative-only or holding-only rows; skip
+            # anything missing the fields the app needs.
+            if not (date and shares and acquired_disposed):
+                continue
+
+            try:
+                date = datetime.strptime(date[:10], '%Y-%m-%d').strftime('%m/%d/%Y')
+            except (ValueError, TypeError):
+                pass
+            try:
+                shares = '{:,}'.format(int(float(shares)))
+            except (ValueError, TypeError):
+                pass
+            try:
+                price = f'${float(price):,.2f}' if price and float(price) != 0 else 'N/A'
+            except (ValueError, TypeError):
+                price = 'N/A'
+
+            rows.append({
+                'Title': issuer,
+                'Transaction Date': date,
+                'Acquired_Disposed': acquired_disposed,
+                'Amount': shares,
+                'Price': price,
+            })
+        return pd.DataFrame(rows)
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Error parsing {url}: {e}")
         return pd.DataFrame()
 
-def parse_xml_form_4(url, cik):
-    headers = {"User-Agent": SEC_USER_AGENT}
-    try:
-        response = requests.get(url, headers=headers)
-        if response.status_code == 200:
-            root = ET.fromstring(response.content)
-            transactions = []
-            for transaction in root.findall('.//nonDerivativeTransaction'):
-                security_title = transaction.find('.//securityTitle/value').text
-                amount = transaction.find('.//transactionShares/value').text
-                acquired_disposed = transaction.find('.//transactionAcquiredDisposedCode/value').text
-                price = transaction.find('.//transactionPricePerShare/value').text if transaction.find('.//transactionPricePerShare/value') is not None else 'N/A'
-                transactions.append({
-                    'Title': security_title,
-                    'Amount': amount,
-                    'Acquired_Disposed': acquired_disposed,
-                    'Price': price
-                })
-            return pd.DataFrame(transactions) if transactions else pd.DataFrame()
-        else:
-            return pd.DataFrame()
-    except Exception as e:
-        print(f"Error: {e}")
-        return pd.DataFrame()
 
 def scrape_form_4(cik, max_filings=25):
     """Scrape Form 4 filings for a CIK and return a DataFrame (empty if none found).
@@ -153,8 +118,8 @@ def scrape_form_4(cik, max_filings=25):
     Runs entirely in-process so it works on serverless platforms where spawning
     a `python3` subprocess and writing to the project directory are not possible.
     Only the most recent `max_filings` filings are processed so a live scrape
-    fits inside a serverless function's time limit (each filing costs several
-    sequential SEC requests).
+    fits inside a serverless function's time limit (each filing costs two
+    sequential SEC requests: the index page and the XML document).
     """
     df = get_form_4_filings(cik)
     if df is None:
@@ -163,16 +128,15 @@ def scrape_form_4(cik, max_filings=25):
     # The atom feed returns filings most-recent-first; cap how many we fetch.
     links = list(df['Link'])[:max_filings]
 
-    all_matched_links = []
+    frames = []
     for link in links:
-        all_matched_links.extend(find_wk_form4_links(link, cik))
-    if not all_matched_links:
-        return pd.DataFrame()
+        xml_url = find_form4_xml(link)
+        if not xml_url:
+            continue
+        frame = parse_form4_xml(xml_url)
+        if not frame.empty:
+            frames.append(frame)
 
-    type_1_links, type_2_links = categorize_links(all_matched_links)
-    frames = [parse_html_form_4(link, cik) for link in type_1_links]
-    frames += [parse_xml_form_4(link, cik) for link in type_2_links]
-    frames = [f for f in frames if not f.empty]
     return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
 
 

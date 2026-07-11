@@ -53,7 +53,8 @@ def preprocess_data(data):
 def index():
     data = []
     search_query = ""
-    csv_path = BUNDLED_CSV
+    csv_path = None
+
     if request.method == 'POST':
         search_query = request.form.get('companySearchText', '').lower()
         try:
@@ -61,20 +62,22 @@ def index():
             df = scrape_form_4(cik)
             if df is not None and not df.empty:
                 df.to_csv(WRITABLE_CSV, index=False)
+                # A search scrapes exactly one company, so show every row it
+                # returned. (Don't re-filter by company name — SEC labels some
+                # filings' title as "Common Stock", which would drop them.)
                 csv_path = WRITABLE_CSV
         except Exception as e:
             print(f"Search/scrape failed: {e}")
+    else:
+        # No search: show the bundled snapshot.
+        csv_path = BUNDLED_CSV
 
-    with open(csv_path, 'r') as file:
-        csv_reader = csv.reader(file)
-        _ = next(csv_reader)
-        for row in csv_reader:
-            if search_query in row[0].lower():
-                data.append(row)
-        if not search_query:
-            file.seek(0)
-            next(csv_reader)
-            data = list(csv_reader)
+    if csv_path:
+        with open(csv_path, 'r') as file:
+            csv_reader = csv.reader(file)
+            next(csv_reader)  # skip header
+            data = [row for row in csv_reader if row]
+
     data = preprocess_data(data)
     return render_template('index.html', data=data, search_query=search_query)
 
