@@ -3,3 +3,7 @@ __pycache__/
 *.pyc
 .DS_Store
 .vercel/
+
+# Local and generated files
+.env
+.pytest_cache/
